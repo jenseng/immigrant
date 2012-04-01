@@ -1,4 +1,5 @@
 = Immigrant
+{<img src="https://secure.travis-ci.org/jenseng/immigrant.png?rvm=1.9.3" />}[http://travis-ci.org/jenseng/immigrant]
 
 Immigrant gives {Foreigner}[https://github.com/matthuhiggins/foreigner] a
 migration generator so you can effortlessly add missing foreign keys. This is
