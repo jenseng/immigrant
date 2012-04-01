@@ -1,0 +1,19 @@
+Description:
+    Creates a new foreign key migration based on your current associations.
+    Pass the migration name, either CamelCased or under_scored.
+
+    A migration class is generated in db/migrate prefixed by a timestamp of the
+    current date and time. It will contain add_foreign_key calls to create any
+    foreign keys that do not already exist (inferred from your model
+    associations and current foreign keys in the database). If there are no
+    missing foreign keys, no migration will be created.
+
+Example:
+    `rails generate immigration AddMissingForeignKeys`
+
+    If the current date is Apr 1, 2012 and the current time 02:03:04, this
+    creates the AddMissingForeignKeys migration
+    db/migrate/20120401020304_add_missing_foreign_keys.rb with appropriate
+    add_foreign_key calls in the Change migration. If on Rails < 3.1, they
+    will be in the Up migration, and corresponding remove_foreign_key calls
+    will be in the Down migration.
