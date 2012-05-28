@@ -1,7 +1,9 @@
 module Immigrant
   # add some useful stuff to foreigner's ForeignKeyDefinition
-  # TODO: get it in foreigner so we don't need to monkey patch
+  # TODO: get more of this into foreigner so we don't need to monkey patch
   module ForeignKeyDefinition
+    include Foreigner::SchemaDumper::ClassMethods
+
     def initialize(from_table, to_table, options, *args)
       options ||= {}
       options[:name] ||= "#{from_table}_#{options[:column]}_fk"
@@ -14,21 +16,7 @@ module Immigrant
 
     def to_ruby(action = :add)
       if action == :add
-        # not DRY ... guts of this are copied from Foreigner :(
-        parts = [ ('add_foreign_key ' + from_table.inspect) ]
-        parts << to_table.inspect
-        parts << (':name => ' + options[:name].inspect)
-  
-        if options[:column] != "#{to_table.singularize}_id"
-          parts << (':column => ' + options[:column].inspect)
-        end
-        if options[:primary_key] != 'id'
-          parts << (':primary_key => ' + options[:primary_key].inspect)
-        end
-        if options[:dependent].present?
-          parts << (':dependent => ' + options[:dependent].inspect)
-        end
-        parts.join(', ')
+        dump_foreign_key(self)
       else
         "remove_foreign_key #{from_table.inspect}, " \
         ":name => #{options[:name].inspect}"
