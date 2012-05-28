@@ -69,6 +69,7 @@ module Immigrant
           #    Foo.has_many :bazzes, :class_name => Bar
           # we need to make sure everything is legit and see if any of them
           # specify :dependent => :delete
+          next if foreign_key.nil?
           if current_key = foreign_keys[foreign_key.hash_key]
             if current_key.to_table != foreign_key.to_table || current_key.options[:primary_key] != foreign_key.options[:primary_key]
               warnings[foreign_key.hash_key] ||= "Skipping #{foreign_key.from_table}.#{foreign_key.options[:column]}: it has multiple associations referencing different keys/tables."
