@@ -40,18 +40,8 @@ module Immigrant
 
       def model_classes
         classes = []
-        pattern = /^\s*(has_one|has_many|has_and_belongs_to_many|belongs_to)\s/
-        Dir['app/models/*.rb'].each do |model|
-          class_name = model.sub(/\A.*\/(.*?)\.rb\z/, '\1').camelize
-          begin
-            klass = class_name.constantize
-          rescue SyntaxError, LoadError
-            if File.read(model) =~ pattern
-              raise "unable to load #{class_name} and its associations"
-            end
-            next
-          end
-          classes << klass if klass < ActiveRecord::Base
+        ActiveRecord::Base.send(:subclasses).each do |model|
+          classes << model.name.constantize
         end
         classes
       end
