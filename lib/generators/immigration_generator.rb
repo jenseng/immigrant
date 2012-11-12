@@ -2,6 +2,7 @@ require 'rails/generators/active_record'
 
 class ImmigrationGenerator < ActiveRecord::Generators::Base
   def create_immigration_file
+    Rails.application.eager_load!
     @keys, warnings = Immigrant.infer_keys
     warnings.values.each{ |warning| $stderr.puts "WARNING: #{warning}" }
     @keys.each do |key|
