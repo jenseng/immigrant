@@ -106,13 +106,13 @@ module Immigrant
               when :has_and_belongs_to_many
                 [
                   Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                    reflection.options[:join_table], klass.table_name,
+                    reflection.options[:join_table].to_s, klass.table_name,
                     :column => reflection.send(fk_method).to_s,
                     :primary_key => klass.primary_key.to_s,
                     :dependent => nil
                   ),
                   Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                    reflection.options[:join_table], reflection.klass.table_name,
+                    reflection.options[:join_table].to_s, reflection.klass.table_name,
                     :column => reflection.association_foreign_key.to_s,
                     :primary_key => reflection.klass.primary_key.to_s,
                     :dependent => nil

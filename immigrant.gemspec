@@ -2,7 +2,7 @@
  
 Gem::Specification.new do |s|
   s.name = 'immigrant'
-  s.version = '0.1.3'
+  s.version = '0.1.4'
   s.summary = 'Migration generator for Foreigner'
   s.description = 'Adds a generator for creating a foreign key migration based on your current model associations'
 
@@ -16,5 +16,5 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = %w(README.rdoc)
   s.files = %w(LICENSE.txt Rakefile README.rdoc lib/generators/USAGE) + Dir['lib/**/*.rb'] + Dir['test/**/*.rb']
   s.add_dependency('activerecord', '>= 3.0')
-  s.add_dependency('foreigner', '>= 1.1.6')
+  s.add_dependency('foreigner', '>= 1.2.1')
 end

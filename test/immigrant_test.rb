@@ -41,12 +41,14 @@ class ImmigrantTest < ActiveSupport::TestCase
       belongs_to :guy, :class_name => 'Author', :foreign_key => 'author_id'
     end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -56,12 +58,14 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Book < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -71,12 +75,14 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Book < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => :delete
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -86,12 +92,14 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Book < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -101,12 +109,14 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Book < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => :delete
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -116,6 +126,8 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Fan < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Author, Fan]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'authors_fans', 'authors',
@@ -125,7 +137,28 @@ class ImmigrantTest < ActiveSupport::TestCase
          'authors_fans', 'fans',
          :column => 'fan_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Fan]).first
+      keys
+    )
+  end
+
+  test 'has_and_belongs_to_many should respect the join_table' do
+    class Author < MockModel
+      has_and_belongs_to_many :fans, :join_table => :lol_wuts
+    end
+    class Fan < MockModel; end
+
+    keys = Immigrant.infer_keys([], [Author, Fan]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
+    assert_equal(
+      [foreign_key_definition(
+         'lol_wuts', 'authors',
+         :column => 'author_id', :primary_key => 'id', :dependent => nil
+       ),
+       foreign_key_definition(
+         'lol_wuts', 'fans',
+         :column => 'fan_id', :primary_key => 'id', :dependent => nil
+       )],
+      keys
     )
   end
 
@@ -138,6 +171,8 @@ class ImmigrantTest < ActiveSupport::TestCase
     class Book < MockModel; end
     class Article < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Article, Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'articles', 'authors',
@@ -147,7 +182,7 @@ class ImmigrantTest < ActiveSupport::TestCase
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Article, Author, Book]).first
+      keys
     )
   end
 
@@ -162,12 +197,14 @@ class ImmigrantTest < ActiveSupport::TestCase
     class Manager < Employee; end
 
     assert(Manager.reflections.present?)
+    keys = Immigrant.infer_keys([], [Company, Employee, Manager]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'employees', 'companies',
          :column => 'company_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Company, Employee, Manager]).first
+      keys
     )
   end
 
@@ -179,12 +216,14 @@ class ImmigrantTest < ActiveSupport::TestCase
       belongs_to :author
     end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -196,12 +235,14 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Book < MockModel; end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 
@@ -229,10 +270,8 @@ class ImmigrantTest < ActiveSupport::TestCase
     class Book < MockModel; end
     class Article < MockModel; end
 
-    assert_equal(
-      [],
-      Immigrant.infer_keys(database_keys, [Article, Author, Book]).first
-    )
+    keys = Immigrant.infer_keys(database_keys, [Article, Author, Book]).first
+    assert_equal([], keys)
   end
 
   test 'finder_sql associations should not generate foreign keys' do
@@ -246,10 +285,8 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     class Book < MockModel; end
 
-    assert_equal(
-      [],
-      Immigrant.infer_keys([], [Author, Book]).first
-    )
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_equal([], keys)
   end
 
   test 'polymorphic associations should not generate foreign keys' do
@@ -263,10 +300,8 @@ class ImmigrantTest < ActiveSupport::TestCase
       has_many :properties, :as => :owner
     end
 
-    assert_equal(
-      [],
-      Immigrant.infer_keys([], [Corporation, Person, Property]).first
-    )
+    keys = Immigrant.infer_keys([], [Corporation, Person, Property]).first
+    assert_equal([], keys)
   end
 
   test 'has_many :through should not generate foreign keys' do
@@ -283,6 +318,8 @@ class ImmigrantTest < ActiveSupport::TestCase
       has_many :authors, :through => :authors_fans
     end
 
+    keys = Immigrant.infer_keys([], [Author, AuthorsFan, Fan]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'authors_fans', 'authors',
@@ -292,7 +329,7 @@ class ImmigrantTest < ActiveSupport::TestCase
          'authors_fans', 'fans',
          :column => 'fan_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, AuthorsFan, Fan]).first
+      keys
     )
   end
 
@@ -303,12 +340,14 @@ class ImmigrantTest < ActiveSupport::TestCase
       belongs_to :invalid
     end
 
+    keys = Immigrant.infer_keys([], [Author, Book]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        )],
-      Immigrant.infer_keys([], [Author, Book]).first
+      keys
     )
   end
 end
