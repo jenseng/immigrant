@@ -20,7 +20,7 @@ class ImmigrantTest < ActiveSupport::TestCase
       true
     end
     def primary_key(table)
-      table !~ /s_.*s\z/ ? 'id' : nil
+      table.to_s !~ /s_.*s\z/ ? 'id' : nil
     end
   end
 
@@ -143,7 +143,7 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_and_belongs_to_many should respect the join_table' do
     class Author < MockModel
-      has_and_belongs_to_many :fans, :join_table => :lol_wuts
+      has_and_belongs_to_many :fans, :join_table => :lols_wuts
     end
     class Fan < MockModel; end
 
@@ -151,11 +151,11 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
-         'lol_wuts', 'authors',
+         'lols_wuts', 'authors',
          :column => 'author_id', :primary_key => 'id', :dependent => nil
        ),
        foreign_key_definition(
-         'lol_wuts', 'fans',
+         'lols_wuts', 'fans',
          :column => 'fan_id', :primary_key => 'id', :dependent => nil
        )],
       keys
