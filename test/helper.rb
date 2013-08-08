@@ -8,6 +8,7 @@ require 'active_record'
 require 'foreigner'
 class Foreigner::Adapter
   def self.configured_name; "dummy_adapter"; end
+  def self.load!; end
 end
 Foreigner.load
 

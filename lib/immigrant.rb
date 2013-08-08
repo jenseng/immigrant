@@ -40,7 +40,7 @@ module Immigrant
 
       def model_classes
         classes = []
-        ActiveRecord::Base.send(:subclasses).each do |model|
+        ActiveRecord::Base.descendants.each do |model|
           classes << model.name.constantize
         end
         classes
