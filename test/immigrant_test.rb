@@ -13,8 +13,25 @@ class ImmigrantTest < ActiveSupport::TestCase
         @connection ||= MockConnection.new
       end
     end
+
+    if ActiveRecord::VERSION::STRING >= '4.'
+      # support old 3.x syntax for the sake of concise tests
+      [:belongs_to, :has_one, :has_many, :has_and_belongs_to_many].each do |method|
+        instance_eval <<-CODE
+          def self.#{method}(assoc, options = {})
+            args = [assoc]
+            scope = options.extract!(:conditions, :order)
+            if scope
+              args.push lambda{ where(scope[:conditions]).order(scope[:order]) }
+            end
+            args.push options
+            super *args
+          end
+        CODE
+      end
+    end
   end
-  
+
   class MockConnection
     def supports_primary_key? # AR <3.2
       true
@@ -31,7 +48,6 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
     subclasses.replace([])
   end
-
 
   # basic scenarios
 
@@ -188,7 +204,7 @@ class ImmigrantTest < ActiveSupport::TestCase
 
 
   # (no) duplication
-  
+
   test 'STI should not generate duplicate foreign keys' do
     class Company < MockModel; end
     class Employee < MockModel
@@ -274,19 +290,21 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal([], keys)
   end
 
-  test 'finder_sql associations should not generate foreign keys' do
-    class Author < MockModel
-      has_many :books, :finder_sql => <<-SQL
-        SELECT *
-        FROM books
-        WHERE author_id = \#{id}
-        ORDER BY RANDOM() LIMIT 5'
-      SQL
-    end
-    class Book < MockModel; end
+  if ActiveRecord::VERSION::STRING < '4.'
+    test 'finder_sql associations should not generate foreign keys' do
+      class Author < MockModel
+        has_many :books, :finder_sql => <<-SQL
+          SELECT *
+          FROM books
+          WHERE author_id = \#{id}
+          ORDER BY RANDOM() LIMIT 5'
+        SQL
+      end
+      class Book < MockModel; end
 
-    keys = Immigrant.infer_keys([]).first
-    assert_equal([], keys)
+      keys = Immigrant.infer_keys([]).first
+      assert_equal([], keys)
+    end
   end
 
   test 'polymorphic associations should not generate foreign keys' do

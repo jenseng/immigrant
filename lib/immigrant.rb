@@ -101,18 +101,19 @@ module Immigrant
                   reflection.klass.table_name, klass.table_name,
                   :column => reflection.send(fk_method).to_s,
                   :primary_key => klass.primary_key.to_s,
-                  :dependent => [:delete, :delete_all].include?(reflection.options[:dependent]) && reflection.options[:conditions].nil? ? :delete : nil
+                  :dependent => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
                 )
               when :has_and_belongs_to_many
+                join_table = (reflection.respond_to?(:join_table) ? reflection.join_table : reflection.options[:join_table]).to_s
                 [
                   Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                    reflection.options[:join_table].to_s, klass.table_name,
+                    join_table, klass.table_name,
                     :column => reflection.send(fk_method).to_s,
                     :primary_key => klass.primary_key.to_s,
                     :dependent => nil
                   ),
                   Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                    reflection.options[:join_table].to_s, reflection.klass.table_name,
+                    join_table, reflection.klass.table_name,
                     :column => reflection.association_foreign_key.to_s,
                     :primary_key => reflection.klass.primary_key.to_s,
                     :dependent => nil
@@ -123,6 +124,25 @@ module Immigrant
             []
           end
         }.flatten
+      end
+
+      def qualified_reflection?(reflection, klass)
+        if ActiveRecord::VERSION::STRING < '4.'
+          reflection.options[:conditions].present?
+        else
+          scope = reflection.scope
+          if scope.nil?
+            false
+          elsif scope.respond_to?(:options)
+            scope.options[:where].present?
+          else
+            klass.instance_exec(*([nil]*scope.arity), &scope).where_values.present?
+          end
+        end
+      rescue
+        # if there's an error evaluating the scope block or whatever, just
+        # err on the side of caution and assume there are conditions
+        true
       end
 
   end
