@@ -50,16 +50,14 @@ module Immigrant
         # see what the models say there should be
         foreign_keys = {}
         warnings = {}
-        classes.map{ |klass|
-          foreign_keys_for(klass)
-        }.flatten.uniq.each do |foreign_key|
+
+        candidate_model_keys(classes).each do |foreign_key|
           # we may have inferred it from several different places, e.g.
           #    Bar.belongs_to :foo
           #    Foo.has_many :bars
           #    Foo.has_many :bazzes, :class_name => Bar
           # we need to make sure everything is legit and see if any of them
           # specify :dependent => :delete
-          next if foreign_key.nil?
           if current_key = foreign_keys[foreign_key.hash_key]
             if current_key.to_table != foreign_key.to_table || current_key.options[:primary_key] != foreign_key.options[:primary_key]
               warnings[foreign_key.hash_key] ||= "Skipping #{foreign_key.from_table}.#{foreign_key.options[:column]}: it has multiple associations referencing different keys/tables."
@@ -74,56 +72,94 @@ module Immigrant
         [foreign_keys, warnings]
       end
 
-      def foreign_keys_for(klass)
-        fk_method = ActiveRecord::VERSION::STRING < '3.1.' ? :primary_key_name : :foreign_key
+      def candidate_model_keys(classes)
+        classes.inject([]) do |result, klass|
+          result.concat foreign_keys_for(klass)
+        end.uniq
+      end
 
-        klass.reflections.values.reject{ |reflection|
+      def candidate_reflections_for(klass)
+        klass.reflections.values.reject do |reflection|
           # some associations can just be ignored, since:
           # 1. we aren't going to parse SQL
           # 2. foreign keys for :through associations will be handled by their
           #    component has_one/has_many/belongs_to associations
           # 3. :polymorphic(/:as) associations can't have foreign keys
           (reflection.options.keys & [:finder_sql, :through, :polymorphic, :as]).present?
-        }.map { |reflection|
+        end
+      end
+
+      def foreign_keys_for(klass)
+        candidate_reflections_for(klass).inject([]) do |result, reflection|
           begin
-            case reflection.macro
-              when :belongs_to
-                Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                  klass.table_name, reflection.klass.table_name,
-                  :column => reflection.send(fk_method).to_s,
-                  :primary_key => (reflection.options[:primary_key] || reflection.klass.primary_key).to_s,
-                  # although belongs_to can specify :dependent, it doesn't make
-                  # sense from a foreign key perspective
-                  :dependent => nil
-                )
-              when :has_one, :has_many
-                Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                  reflection.klass.table_name, klass.table_name,
-                  :column => reflection.send(fk_method).to_s,
-                  :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
-                  :dependent => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
-                )
-              when :has_and_belongs_to_many
-                join_table = (reflection.respond_to?(:join_table) ? reflection.join_table : reflection.options[:join_table]).to_s
-                [
-                  Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                    join_table, klass.table_name,
-                    :column => reflection.send(fk_method).to_s,
-                    :primary_key => klass.primary_key.to_s,
-                    :dependent => nil
-                  ),
-                  Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
-                    join_table, reflection.klass.table_name,
-                    :column => reflection.association_foreign_key.to_s,
-                    :primary_key => reflection.klass.primary_key.to_s,
-                    :dependent => nil
-                  )
-                ]
-            end
+            result.concat foreign_key_for(klass, reflection)
           rescue NameError # e.g. belongs_to :oops_this_is_not_a_table
-            []
+            result
           end
-        }.flatten
+        end
+      end
+
+      def foreign_key_for(klass, reflection)
+        case reflection.macro
+        when :belongs_to
+          infer_belongs_to_keys(klass, reflection)
+        when :has_one, :has_many
+          infer_has_n_keys(klass, reflection)
+        when :has_and_belongs_to_many
+          infer_habtm_keys(klass, reflection)
+        else
+          []
+        end
+      end
+
+      def infer_belongs_to_keys(klass, reflection)
+        [
+          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+            klass.table_name,
+            reflection.klass.table_name,
+            :column => reflection.send(fk_method).to_s,
+            :primary_key => (reflection.options[:primary_key] || reflection.klass.primary_key).to_s,
+            # although belongs_to can specify :dependent, it doesn't make
+            # sense from a foreign key perspective
+            :dependent => nil
+          )
+        ]
+      end
+
+      def infer_has_n_keys(klass, reflection)
+        [
+          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+            reflection.klass.table_name,
+            klass.table_name,
+            :column => reflection.send(fk_method).to_s,
+            :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
+            :dependent => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
+          )
+        ]
+      end
+
+      def infer_habtm_keys(klass, reflection)
+        join_table = (reflection.respond_to?(:join_table) ? reflection.join_table : reflection.options[:join_table]).to_s
+        [
+          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+            join_table,
+            klass.table_name,
+            :column => reflection.send(fk_method).to_s,
+            :primary_key => klass.primary_key.to_s,
+            :dependent => nil
+          ),
+          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+            join_table,
+            reflection.klass.table_name,
+            :column => reflection.association_foreign_key.to_s,
+            :primary_key => reflection.klass.primary_key.to_s,
+            :dependent => nil
+          )
+        ]
+      end
+
+      def fk_method
+        ActiveRecord::VERSION::STRING < '3.1.' ? :primary_key_name : :foreign_key
       end
 
       def qualified_reflection?(reflection, klass)
