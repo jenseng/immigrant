@@ -91,7 +91,7 @@ module Immigrant
                 Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
                   klass.table_name, reflection.klass.table_name,
                   :column => reflection.send(fk_method).to_s,
-                  :primary_key => reflection.klass.primary_key.to_s,
+                  :primary_key => (reflection.options[:primary_key] || reflection.klass.primary_key).to_s,
                   # although belongs_to can specify :dependent, it doesn't make
                   # sense from a foreign key perspective
                   :dependent => nil
@@ -100,7 +100,7 @@ module Immigrant
                 Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
                   reflection.klass.table_name, klass.table_name,
                   :column => reflection.send(fk_method).to_s,
-                  :primary_key => klass.primary_key.to_s,
+                  :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
                   :dependent => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
                 )
               when :has_and_belongs_to_many

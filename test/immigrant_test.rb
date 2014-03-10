@@ -202,6 +202,25 @@ class ImmigrantTest < ActiveSupport::TestCase
     )
   end
 
+  test 'primary_key should be respected' do
+    class User < MockModel
+      has_many :emails, :primary_key => :email, :foreign_key => :to,
+               :dependent => :destroy
+    end
+    class Email < MockModel
+      belongs_to :user, :primary_key => :email, :foreign_key => :to
+    end
+
+    keys = Immigrant.infer_keys([]).first
+    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
+    assert_equal(
+      [foreign_key_definition(
+        'emails', 'users',
+        :column => 'to', :primary_key => 'email', :dependent => nil
+       )],
+      keys
+    )
+  end
 
   # (no) duplication
 
