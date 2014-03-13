@@ -13,8 +13,7 @@ Gem::Specification.new do |s|
   s.email             = 'jenseng@gmail.com'
   s.homepage          = 'http://github.com/jenseng/immigrant'
 
-  s.extra_rdoc_files = %w(README.rdoc)
-  s.files = %w(LICENSE.txt Rakefile README.rdoc lib/generators/USAGE) + Dir['lib/**/*.rb'] + Dir['test/**/*.rb']
+  s.files = %w(LICENSE.txt Rakefile README.md lib/generators/USAGE) + Dir['lib/**/*.rb'] + Dir['test/**/*.rb']
   s.add_dependency('activerecord', '>= 3.0')
   s.add_dependency('foreigner', '>= 1.2.1')
 end
