@@ -40,6 +40,8 @@ database. So if a model is using a different database connection and it has
 foreign keys, Immigrant will incorrectly include them again in the generated
 migration.
 
+## [Changelog](CHANGELOG.md)
+
 ## License
 
 Copyright (c) 2012-2014 Jon Jensen, released under the MIT license
