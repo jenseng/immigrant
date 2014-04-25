@@ -13,5 +13,4 @@ gemfile:
 matrix:
   allow_failures:
     - gemfile: gemfiles/activerecord_edge.gemfile
-    - gemfile: gemfiles/activerecord_4.0.gemfile
     - gemfile: gemfiles/activerecord_4.1.gemfile
