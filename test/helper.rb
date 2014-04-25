@@ -2,7 +2,7 @@ require 'rubygems'
 require 'bundler/setup'
 Bundler.require(:default)
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'active_record'
 
 require 'foreigner'
