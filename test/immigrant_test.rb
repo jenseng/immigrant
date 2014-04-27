@@ -353,7 +353,7 @@ class ImmigrantTest < ActiveSupport::TestCase
           has_many :books, :finder_sql => <<-SQL
             SELECT *
             FROM books
-            WHERE author_id = \#{id}
+            WHERE author_id = \\\#{id}
             ORDER BY RANDOM() LIMIT 5'
           SQL
         end
