@@ -39,11 +39,7 @@ module Immigrant
       end
 
       def model_classes
-        classes = []
-        ActiveRecord::Base.descendants.each do |model|
-          classes << model.name.constantize
-        end
-        classes
+        ActiveRecord::Base.descendants
       end
 
       def model_keys(classes)

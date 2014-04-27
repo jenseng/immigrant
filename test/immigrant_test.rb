@@ -17,15 +17,16 @@ class ImmigrantTest < ActiveSupport::TestCase
     if ActiveRecord::VERSION::STRING >= '4.'
       # support old 3.x syntax for the sake of concise tests
       [:belongs_to, :has_one, :has_many, :has_and_belongs_to_many].each do |method|
-        instance_eval <<-CODE
-          def self.#{method}(assoc, options = {})
-            args = [assoc]
-            scope = options.extract!(:conditions, :order)
-            if scope
-              args.push lambda{ where(scope[:conditions]).order(scope[:order]) }
+        instance_eval <<-CODE, __FILE__, __LINE__ + 1
+          def self.#{method}(assoc, scope = nil, options = {})
+            if scope.is_a?(Hash)
+              options = scope
+              scope = options.extract!(:conditions, :order)
+              scope = if scope && scope.present?
+                lambda{ where(scope[:conditions]).order(scope[:order]) }
+              end
             end
-            args.push options
-            super *args
+            super assoc, scope, options
           end
         CODE
       end
