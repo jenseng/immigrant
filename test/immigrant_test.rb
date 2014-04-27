@@ -21,9 +21,9 @@ class ImmigrantTest < ActiveSupport::TestCase
           def self.#{method}(assoc, scope = nil, options = {})
             if scope.is_a?(Hash)
               options = scope
-              scope = options.extract!(:conditions, :order)
-              scope = if scope && scope.present?
-                lambda{ where(scope[:conditions]).order(scope[:order]) }
+              scope_opts = options.extract!(:conditions, :order)
+              scope = if scope_opts && scope_opts.present?
+                lambda{ |_| where(scope_opts[:conditions]).order(scope_opts[:order]) }
               end
             end
             super assoc, scope, options
