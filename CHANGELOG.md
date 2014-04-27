@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+* Rails 4.1 HABTM fix (fixes #10)
+
 ## 0.1.6
 
 * Fix :primary_key bug (fixes #9)
