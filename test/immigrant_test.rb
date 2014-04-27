@@ -45,18 +45,30 @@ class ImmigrantTest < ActiveSupport::TestCase
   def teardown
     subclasses = ActiveSupport::DescendantsTracker.direct_descendants(MockModel)
     subclasses.each do |subclass|
-      ImmigrantTest.send(:remove_const, subclass.to_s.sub(/.*::/, ''))
+      Object.send(:remove_const, subclass.to_s)
     end
     subclasses.replace([])
+    # also need to clear out other things under AR::Base, because as of
+    # 4.1 there are automagical anonymous classes due to HABTM
+    subclasses = ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base)
+    subclasses.replace([MockModel])
+  end
+
+  def given(code)
+    # ugly little hack to get these temp classes not namespaced, so
+    # that generated HM/BT from HABTM will find the right class
+    Object.class_eval code
   end
 
   # basic scenarios
 
   test 'belongs_to should generate a foreign key' do
-    class Author < MockModel; end
-    class Book < MockModel
-      belongs_to :guy, :class_name => 'Author', :foreign_key => 'author_id'
-    end
+    given <<-CODE
+      class Author < MockModel; end
+      class Book < MockModel
+        belongs_to :guy, :class_name => 'Author', :foreign_key => 'author_id'
+      end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -70,10 +82,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'has_one should generate a foreign key' do
-    class Author < MockModel
-      has_one :piece_de_resistance, :class_name => 'Book', :order => "id DESC"
-    end
-    class Book < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_one :piece_de_resistance, :class_name => 'Book', :order => "id DESC"
+      end
+      class Book < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -87,10 +101,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'has_one :dependent => :delete should generate a foreign key with :dependent => :delete' do
-    class Author < MockModel
-      has_one :book, :order => "id DESC", :dependent => :delete
-    end
-    class Book < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_one :book, :order => "id DESC", :dependent => :delete
+      end
+      class Book < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -104,10 +120,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'has_many should generate a foreign key' do
-    class Author < MockModel
-      has_many :babies, :class_name => 'Book'
-    end
-    class Book < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_many :babies, :class_name => 'Book'
+      end
+      class Book < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -121,10 +139,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'has_many :dependent => :delete_all should generate a foreign key with :dependent => :delete' do
-    class Author < MockModel
-      has_many :books, :dependent => :delete_all
-    end
-    class Book < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_many :books, :dependent => :delete_all
+      end
+      class Book < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -138,10 +158,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'has_and_belongs_to_many should generate two foreign keys' do
-    class Author < MockModel
-      has_and_belongs_to_many :fans
-    end
-    class Fan < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_and_belongs_to_many :fans
+      end
+      class Fan < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -159,10 +181,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'has_and_belongs_to_many should respect the join_table' do
-    class Author < MockModel
-      has_and_belongs_to_many :fans, :join_table => :lols_wuts
-    end
-    class Fan < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_and_belongs_to_many :fans, :join_table => :lols_wuts
+      end
+      class Fan < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -180,13 +204,15 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'conditional has_one/has_many associations should ignore :dependent' do
-    class Author < MockModel
-      has_many :articles, :conditions => "published", :dependent => :delete_all
-      has_one :favorite_book, :class_name => 'Book',
-              :conditions => "most_awesome", :dependent => :delete
-    end
-    class Book < MockModel; end
-    class Article < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_many :articles, :conditions => "published", :dependent => :delete_all
+        has_one :favorite_book, :class_name => 'Book',
+                :conditions => "most_awesome", :dependent => :delete
+      end
+      class Book < MockModel; end
+      class Article < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -204,13 +230,15 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'primary_key should be respected' do
-    class User < MockModel
-      has_many :emails, :primary_key => :email, :foreign_key => :to,
-               :dependent => :destroy
-    end
-    class Email < MockModel
-      belongs_to :user, :primary_key => :email, :foreign_key => :to
-    end
+    given <<-CODE
+      class User < MockModel
+        has_many :emails, :primary_key => :email, :foreign_key => :to,
+                 :dependent => :destroy
+      end
+      class Email < MockModel
+        belongs_to :user, :primary_key => :email, :foreign_key => :to
+      end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -226,11 +254,13 @@ class ImmigrantTest < ActiveSupport::TestCase
   # (no) duplication
 
   test 'STI should not generate duplicate foreign keys' do
-    class Company < MockModel; end
-    class Employee < MockModel
-      belongs_to :company
-    end
-    class Manager < Employee; end
+    given <<-CODE
+      class Company < MockModel; end
+      class Employee < MockModel
+        belongs_to :company
+      end
+      class Manager < Employee; end
+    CODE
 
     assert(Manager.reflections.present?)
     keys = Immigrant.infer_keys([]).first
@@ -245,12 +275,14 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'complementary associations should not generate duplicate foreign keys' do
-    class Author < MockModel
-      has_many :books
-    end
-    class Book < MockModel
-      belongs_to :author
-    end
+    given <<-CODE
+      class Author < MockModel
+        has_many :books
+      end
+      class Book < MockModel
+        belongs_to :author
+      end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -264,12 +296,14 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'redundant associations should not generate duplicate foreign keys' do
-    class Author < MockModel
-      has_many :books
-      has_many :favorite_books, :class_name => 'Book', :conditions => "awesome"
-      has_many :bad_books, :class_name => 'Book', :conditions => "amateur_hour"
-    end
-    class Book < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_many :books
+        has_many :favorite_books, :class_name => 'Book', :conditions => "awesome"
+        has_many :bad_books, :class_name => 'Book', :conditions => "amateur_hour"
+      end
+      class Book < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -298,13 +332,15 @@ class ImmigrantTest < ActiveSupport::TestCase
       )
     ]
 
-    class Author < MockModel
-      has_many :articles
-      has_one :favorite_book, :class_name => 'Book',
-              :conditions => "most_awesome"
-    end
-    class Book < MockModel; end
-    class Article < MockModel; end
+    given <<-CODE
+      class Author < MockModel
+        has_many :articles
+        has_one :favorite_book, :class_name => 'Book',
+                :conditions => "most_awesome"
+      end
+      class Book < MockModel; end
+      class Article < MockModel; end
+    CODE
 
     keys = Immigrant.infer_keys(database_keys).first
     assert_equal([], keys)
@@ -312,15 +348,17 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   if ActiveRecord::VERSION::STRING < '4.'
     test 'finder_sql associations should not generate foreign keys' do
-      class Author < MockModel
-        has_many :books, :finder_sql => <<-SQL
-          SELECT *
-          FROM books
-          WHERE author_id = \#{id}
-          ORDER BY RANDOM() LIMIT 5'
-        SQL
-      end
-      class Book < MockModel; end
+      given <<-CODE
+        class Author < MockModel
+          has_many :books, :finder_sql => <<-SQL
+            SELECT *
+            FROM books
+            WHERE author_id = \#{id}
+            ORDER BY RANDOM() LIMIT 5'
+          SQL
+        end
+        class Book < MockModel; end
+      CODE
 
       keys = Immigrant.infer_keys([]).first
       assert_equal([], keys)
@@ -328,33 +366,37 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'polymorphic associations should not generate foreign keys' do
-    class Property < MockModel
-      belongs_to :owner, :polymorphic => true 
-    end
-    class Person < MockModel
-      has_many :properties, :as => :owner
-    end
-    class Corporation < MockModel
-      has_many :properties, :as => :owner
-    end
+    given <<-CODE
+      class Property < MockModel
+        belongs_to :owner, :polymorphic => true
+      end
+      class Person < MockModel
+        has_many :properties, :as => :owner
+      end
+      class Corporation < MockModel
+        has_many :properties, :as => :owner
+      end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_equal([], keys)
   end
 
   test 'has_many :through should not generate foreign keys' do
-    class Author < MockModel
-      has_many :authors_fans
-      has_many :fans, :through => :authors_fans
-    end
-    class AuthorsFan < MockModel
-      belongs_to :author
-      belongs_to :fan
-    end
-    class Fan < MockModel
-      has_many :authors_fans
-      has_many :authors, :through => :authors_fans
-    end
+    given <<-CODE
+      class Author < MockModel
+        has_many :authors_fans
+        has_many :fans, :through => :authors_fans
+      end
+      class AuthorsFan < MockModel
+        belongs_to :author
+        belongs_to :fan
+      end
+      class Fan < MockModel
+        has_many :authors_fans
+        has_many :authors, :through => :authors_fans
+      end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
@@ -372,11 +414,13 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   test 'broken associations should not cause errors' do
-    class Author < MockModel; end
-    class Book < MockModel
-      belongs_to :author
-      belongs_to :invalid
-    end
+    given <<-CODE
+      class Author < MockModel; end
+      class Book < MockModel
+        belongs_to :author
+        belongs_to :invalid
+      end
+    CODE
 
     keys = Immigrant.infer_keys([]).first
     assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }

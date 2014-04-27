@@ -109,6 +109,7 @@ module Immigrant
       end
 
       def infer_belongs_to_keys(klass, reflection)
+        return [] if reflection.name == :left_side # redundant and unusable reflection automagically created by HABTM
         [
           Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
             klass.table_name,
