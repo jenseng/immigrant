@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.7
+## 0.1.8
+
+* Fix gemspec issue (fixes #13)
+
+## ~~0.1.7 broken~~
 
 * Rails 4.1 HABTM fix (fixes #10)
 
