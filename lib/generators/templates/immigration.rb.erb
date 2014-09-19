@@ -1,6 +1,6 @@
 class <%= migration_class_name %> < ActiveRecord::Migration
   def change
-<% @keys.each do |key| -%>
+<% @keys.reject{ |k| k.from_table.nil? || k.to_table.nil? }.each do |key| -%>
     <%= key.to_ruby(:add) %>
 <%- end -%>
   end
