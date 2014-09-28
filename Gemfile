@@ -4,9 +4,9 @@ gemspec
 
 group :development do
   gem 'appraisal'
+  gem 'debugger'
 end
 
 group :test do
   gem 'rake'
-  gem 'debugger'
 end
