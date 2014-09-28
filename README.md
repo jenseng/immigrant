@@ -1,11 +1,9 @@
 # Immigrant
 [<img src="https://secure.travis-ci.org/jenseng/immigrant.png?rvm=1.9.3" />](http://travis-ci.org/jenseng/immigrant)
 
-Immigrant gives [Foreigner](https://github.com/matthuhiggins/foreigner) a
-migration generator so you can effortlessly add missing foreign keys. This is
-particularly helpful when you decide to add keys to an established Rails app.
-
-Like Foreigner, Immigrant requires Rails 3.0 or greater.
+Immigrant gives Rails a foreign key migration generator so you can
+effortlessly find and add missing keys. This is particularly helpful
+when you decide to add keys to an established Rails app.
 
 ## Installation
 
@@ -14,6 +12,9 @@ Add the following to your Gemfile:
 ```ruby
 gem 'immigrant'
 ```
+
+If you're using a version of Rails prior to 4.2, you'll also need the
+[Foreigner](https://github.com/matthuhiggins/foreigner) gem.
 
 ## Usage
 
