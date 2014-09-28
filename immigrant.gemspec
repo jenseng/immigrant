@@ -15,5 +15,4 @@ Gem::Specification.new do |s|
 
   s.files = %w(LICENSE.txt Rakefile README.md lib/generators/USAGE) + Dir['lib/**/*rb'] + Dir['test/**/*.rb']
   s.add_dependency('activerecord', '>= 3.0')
-  s.add_dependency('foreigner', '>= 1.2.1')
 end

@@ -10,8 +10,7 @@ class ImmigrationGenerator < ActiveRecord::Generators::Base
       $stderr.puts "NOTICE: #{key.options[:name]} has ON DELETE CASCADE. You should remove the :dependent option from the association to take advantage of this."
     end
     if @keys.present?
-      template = ActiveRecord::VERSION::STRING < "3.1." ? 'immigration-pre-3.1.rb.erb' : 'immigration.rb.erb'
-      migration_template template, "db/migrate/#{file_name}.rb"
+      migration_template Immigrant::TEMPLATE, "db/migrate/#{file_name}.rb"
     else
       puts 'Nothing to do'
     end

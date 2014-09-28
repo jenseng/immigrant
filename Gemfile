@@ -1,5 +1,7 @@
 source "http://rubygems.org"
 
+gem "activerecord", :github => "rails/rails"
+
 gemspec
 
 group :development do

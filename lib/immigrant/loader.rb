@@ -1,7 +1,8 @@
 module Immigrant
   def self.load
-    Foreigner::ConnectionAdapters::ForeignKeyDefinition.instance_eval do
-      include Immigrant::ForeignKeyDefinition
-    end
+    require "active_record"
+    require_relative "compat"
+
+    ForeignKeyDefinition.send :include, ForeignKeyExtensions
   end
 end

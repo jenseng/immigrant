@@ -1,11 +1,6 @@
 require 'active_support/all'
-require 'foreigner'
 
 module Immigrant
-  extend ActiveSupport::Autoload
-  autoload :Loader
-  autoload :ForeignKeyDefinition
-
   class << self
     def infer_keys(db_keys = current_foreign_keys, classes = model_classes)
       database_keys = db_keys.inject({}) { |hash, foreign_key|
@@ -17,7 +12,7 @@ module Immigrant
       model_keys.keys.each do |hash_key|
         foreign_key = model_keys[hash_key]
         # if the foreign key exists in the db, we call it good (even if
-        # the name is different or :dependent doesn't match), though 
+        # the name is different or :on_delete doesn't match, etc.), though
         # we do warn on clearly broken stuff
         if current_key = database_keys[hash_key]
           if current_key.to_table != foreign_key.to_table || current_key.options[:primary_key] != foreign_key.options[:primary_key]
@@ -111,26 +106,26 @@ module Immigrant
       def infer_belongs_to_keys(klass, reflection)
         return [] if reflection.name == :left_side # redundant and unusable reflection automagically created by HABTM
         [
-          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+          ForeignKeyDefinition.new(
             klass.table_name,
             reflection.klass.table_name,
-            :column => reflection.send(fk_method).to_s,
+            :column => reflection.send(FOREIGN_KEY).to_s,
             :primary_key => (reflection.options[:primary_key] || reflection.klass.primary_key).to_s,
             # although belongs_to can specify :dependent, it doesn't make
             # sense from a foreign key perspective
-            :dependent => nil
+            ON_DELETE => nil
           )
         ]
       end
 
       def infer_has_n_keys(klass, reflection)
         [
-          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+          ForeignKeyDefinition.new(
             reflection.klass.table_name,
             klass.table_name,
-            :column => reflection.send(fk_method).to_s,
+            :column => reflection.send(FOREIGN_KEY).to_s,
             :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
-            :dependent => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
+            ON_DELETE => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
           )
         ]
       end
@@ -138,46 +133,22 @@ module Immigrant
       def infer_habtm_keys(klass, reflection)
         join_table = (reflection.respond_to?(:join_table) ? reflection.join_table : reflection.options[:join_table]).to_s
         [
-          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+          ForeignKeyDefinition.new(
             join_table,
             klass.table_name,
-            :column => reflection.send(fk_method).to_s,
+            :column => reflection.send(FOREIGN_KEY).to_s,
             :primary_key => klass.primary_key.to_s,
-            :dependent => nil
+            ON_DELETE => nil
           ),
-          Foreigner::ConnectionAdapters::ForeignKeyDefinition.new(
+          ForeignKeyDefinition.new(
             join_table,
             reflection.klass.table_name,
             :column => reflection.association_foreign_key.to_s,
             :primary_key => reflection.klass.primary_key.to_s,
-            :dependent => nil
+            ON_DELETE => nil
           )
         ]
       end
-
-      def fk_method
-        ActiveRecord::VERSION::STRING < '3.1.' ? :primary_key_name : :foreign_key
-      end
-
-      def qualified_reflection?(reflection, klass)
-        if ActiveRecord::VERSION::STRING < '4.'
-          reflection.options[:conditions].present?
-        else
-          scope = reflection.scope
-          if scope.nil?
-            false
-          elsif scope.respond_to?(:options)
-            scope.options[:where].present?
-          else
-            klass.instance_exec(*([nil]*scope.arity), &scope).where_values.present?
-          end
-        end
-      rescue
-        # if there's an error evaluating the scope block or whatever, just
-        # err on the side of caution and assume there are conditions
-        true
-      end
-
   end
 end
 
