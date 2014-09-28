@@ -24,5 +24,6 @@ appraise "activerecord-4.1" do
 end
 
 appraise "activerecord-edge" do
+  gem "arel", github: "rails/arel"
   gem "activerecord", github: "rails/rails"
 end
