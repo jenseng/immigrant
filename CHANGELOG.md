@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+* Rails 4.2 support
+
 ## 0.1.8
 
 * Fix gemspec issue (fixes #13)
