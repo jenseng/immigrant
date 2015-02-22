@@ -60,6 +60,13 @@ class ImmigrantTest < ActiveSupport::TestCase
     Object.class_eval code
   end
 
+  def infer_keys(db_keys = [])
+    keys = Immigrant.infer_keys(db_keys).first
+    # ensure each key generates correctly
+    keys.each { |key| key.to_ruby(:add) }
+    keys
+  end
+
   # basic scenarios
 
   test 'belongs_to should generate a foreign key' do
@@ -70,14 +77,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -89,14 +94,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Book < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -108,14 +111,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Book < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => :delete
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -127,14 +128,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Book < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -146,14 +145,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Book < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => :delete
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -165,8 +162,6 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Fan < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'authors_fans', 'authors',
@@ -176,7 +171,7 @@ class ImmigrantTest < ActiveSupport::TestCase
          'authors_fans', 'fans',
          :column => 'fan_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -188,8 +183,6 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Fan < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'lols_wuts', 'authors',
@@ -199,7 +192,7 @@ class ImmigrantTest < ActiveSupport::TestCase
          'lols_wuts', 'fans',
          :column => 'fan_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -214,8 +207,6 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Article < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'articles', 'authors',
@@ -225,7 +216,7 @@ class ImmigrantTest < ActiveSupport::TestCase
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -240,14 +231,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
         'emails', 'users',
         :column => 'to', :primary_key => 'email', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -263,14 +252,12 @@ class ImmigrantTest < ActiveSupport::TestCase
     CODE
 
     assert(Manager.reflections.present?)
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'employees', 'companies',
          :column => 'company_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -284,14 +271,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -305,14 +290,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Book < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -342,8 +325,7 @@ class ImmigrantTest < ActiveSupport::TestCase
       class Article < MockModel; end
     CODE
 
-    keys = Immigrant.infer_keys(database_keys).first
-    assert_equal([], keys)
+    assert_equal([], infer_keys(database_keys))
   end
 
   if ActiveRecord::VERSION::STRING < '4.'
@@ -360,8 +342,7 @@ class ImmigrantTest < ActiveSupport::TestCase
         class Book < MockModel; end
       CODE
 
-      keys = Immigrant.infer_keys([]).first
-      assert_equal([], keys)
+      assert_equal([], infer_keys)
     end
   end
 
@@ -378,8 +359,7 @@ class ImmigrantTest < ActiveSupport::TestCase
       end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_equal([], keys)
+    assert_equal([], infer_keys)
   end
 
   test 'has_many :through should not generate foreign keys' do
@@ -398,8 +378,6 @@ class ImmigrantTest < ActiveSupport::TestCase
       end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'authors_fans', 'authors',
@@ -409,7 +387,7 @@ class ImmigrantTest < ActiveSupport::TestCase
          'authors_fans', 'fans',
          :column => 'fan_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 
@@ -422,14 +400,12 @@ class ImmigrantTest < ActiveSupport::TestCase
       end
     CODE
 
-    keys = Immigrant.infer_keys([]).first
-    assert_nothing_raised { keys.map { |key| key.to_ruby(:add) } }
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
        )],
-      keys
+      infer_keys
     )
   end
 end
