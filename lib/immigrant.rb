@@ -1,7 +1,7 @@
 require 'active_support/all'
 
 module Immigrant
-  class << self
+  class KeyFinder
     def infer_keys(db_keys = current_foreign_keys, classes = model_classes)
       database_keys = db_keys.inject({}) { |hash, foreign_key|
         hash[foreign_key.hash_key] = foreign_key
@@ -27,8 +27,12 @@ module Immigrant
 
     private
 
+      def tables
+        @tables ||= ActiveRecord::Base.connection.tables
+      end
+
       def current_foreign_keys
-        ActiveRecord::Base.connection.tables.map{ |table|
+        tables.map{ |table|
           ActiveRecord::Base.connection.foreign_keys(table)
         }.flatten
       end
@@ -81,7 +85,7 @@ module Immigrant
       end
 
       def foreign_keys_for(klass)
-        return [] if klass.abstract_class?
+        return [] if klass.abstract_class? || !tables.include?(klass.table_name)
         candidate_reflections_for(klass).inject([]) do |result, reflection|
           begin
             result.concat foreign_key_for(klass, reflection)
@@ -151,6 +155,21 @@ module Immigrant
             :primary_key => reflection.klass.primary_key.to_s
           )
         ]
+      end
+
+      def qualified_reflection?(reflection, klass)
+        scope = reflection.scope
+        if scope.nil?
+          false
+        elsif scope.respond_to?(:options)
+          scope.options[:where].present?
+        else
+          klass.instance_exec(*([nil]*scope.arity), &scope).where_values.present?
+        end
+      rescue
+        # if there's an error evaluating the scope block or whatever, just
+        # err on the side of caution and assume there are conditions
+        true
       end
   end
 end

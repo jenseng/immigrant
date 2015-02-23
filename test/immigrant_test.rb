@@ -37,6 +37,9 @@ class ImmigrantTest < ActiveSupport::TestCase
     def primary_key(table)
       table.to_s !~ /s_.*s\z/ ? 'id' : nil
     end
+    def tables
+      ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base).map(&:table_name)
+    end
   end
 
   def teardown
@@ -55,7 +58,7 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   def infer_keys(db_keys = [])
-    keys = Immigrant.infer_keys(db_keys).first
+    keys = Immigrant::KeyFinder.new.infer_keys(db_keys).first
     # ensure each key generates correctly
     keys.each { |key| key.to_ruby(:add) }
     keys.sort_by { |key| [key.from_table, key.to_table] }
