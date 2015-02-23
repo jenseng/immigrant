@@ -3,22 +3,19 @@ require 'helper'
 class ImmigrantTest < ActiveSupport::TestCase
   include TestMethods
 
-  class MockModel < ActiveRecord::Base
-    self.abstract_class = true
-    class << self
-      def primary_key
-        connection.primary_key(table_name)
-      end
-      def connection
-        @connection ||= MockConnection.new
-      end
+  ActiveRecord::Base.instance_eval do
+    def primary_key
+      connection.primary_key(table_name)
+    end
+    def connection
+      @connection ||= MockConnection.new
     end
 
     if ActiveRecord::VERSION::STRING >= '4.'
       # support old 3.x syntax for the sake of concise tests
-      [:belongs_to, :has_one, :has_many, :has_and_belongs_to_many].each do |method|
-        instance_eval <<-CODE, __FILE__, __LINE__ + 1
-          def self.#{method}(assoc, scope = nil, options = {})
+      extend(Module.new{
+        [:belongs_to, :has_one, :has_many, :has_and_belongs_to_many].each do |method|
+          define_method method do |assoc, scope = nil, options = {}|
             if scope.is_a?(Hash)
               options = scope
               scope_opts = options.extract!(:conditions, :order)
@@ -28,8 +25,8 @@ class ImmigrantTest < ActiveSupport::TestCase
             end
             super assoc, scope, options
           end
-        CODE
-      end
+        end
+      })
     end
   end
 
@@ -43,15 +40,12 @@ class ImmigrantTest < ActiveSupport::TestCase
   end
 
   def teardown
-    subclasses = ActiveSupport::DescendantsTracker.direct_descendants(MockModel)
+    subclasses = ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base)
     subclasses.each do |subclass|
-      Object.send(:remove_const, subclass.to_s)
+      subclass = subclass.to_s
+      Object.send(:remove_const, subclass) if subclass =~ /\A[A-Z]/ && Object.const_defined?(subclass)
     end
     subclasses.replace([])
-    # also need to clear out other things under AR::Base, because as of
-    # 4.1 there are automagical anonymous classes due to HABTM
-    subclasses = ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base)
-    subclasses.replace([MockModel])
   end
 
   def given(code)
@@ -71,8 +65,8 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'belongs_to should generate a foreign key' do
     given <<-CODE
-      class Author < MockModel; end
-      class Book < MockModel
+      class Author < ActiveRecord::Base; end
+      class Book < ActiveRecord::Base
         belongs_to :guy, :class_name => 'Author', :foreign_key => 'author_id'
       end
     CODE
@@ -88,10 +82,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_one should generate a foreign key' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_one :piece_de_resistance, :class_name => 'Book', :order => "id DESC"
       end
-      class Book < MockModel; end
+      class Book < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -105,10 +99,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_one :dependent => :delete should generate a foreign key with :on_delete => :cascade' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_one :book, :order => "id DESC", :dependent => :delete
       end
-      class Book < MockModel; end
+      class Book < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -122,10 +116,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_many should generate a foreign key' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :babies, :class_name => 'Book'
       end
-      class Book < MockModel; end
+      class Book < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -139,10 +133,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_many :dependent => :delete_all should generate a foreign key with :on_delete => :cascade' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :books, :dependent => :delete_all
       end
-      class Book < MockModel; end
+      class Book < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -156,10 +150,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_and_belongs_to_many should generate two foreign keys' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_and_belongs_to_many :fans
       end
-      class Fan < MockModel; end
+      class Fan < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -177,10 +171,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_and_belongs_to_many should respect the join_table' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_and_belongs_to_many :fans, :join_table => :lols_wuts
       end
-      class Fan < MockModel; end
+      class Fan < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -198,13 +192,13 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'conditional has_one/has_many associations should ignore :dependent' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :articles, :conditions => "published", :dependent => :delete_all
         has_one :favorite_book, :class_name => 'Book',
                 :conditions => "most_awesome", :dependent => :delete
       end
-      class Book < MockModel; end
-      class Article < MockModel; end
+      class Book < ActiveRecord::Base; end
+      class Article < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -222,11 +216,11 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'primary_key should be respected' do
     given <<-CODE
-      class User < MockModel
+      class User < ActiveRecord::Base
         has_many :emails, :primary_key => :email, :foreign_key => :to,
                  :dependent => :destroy
       end
-      class Email < MockModel
+      class Email < ActiveRecord::Base
         belongs_to :user, :primary_key => :email, :foreign_key => :to
       end
     CODE
@@ -244,8 +238,8 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'STI should not generate duplicate foreign keys' do
     given <<-CODE
-      class Company < MockModel; end
-      class Employee < MockModel
+      class Company < ActiveRecord::Base; end
+      class Employee < ActiveRecord::Base
         belongs_to :company
       end
       class Manager < Employee; end
@@ -263,10 +257,10 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'complementary associations should not generate duplicate foreign keys' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :books
       end
-      class Book < MockModel
+      class Book < ActiveRecord::Base
         belongs_to :author
       end
     CODE
@@ -282,12 +276,12 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'redundant associations should not generate duplicate foreign keys' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :books
         has_many :favorite_books, :class_name => 'Book', :conditions => "awesome"
         has_many :bad_books, :class_name => 'Book', :conditions => "amateur_hour"
       end
-      class Book < MockModel; end
+      class Book < ActiveRecord::Base; end
     CODE
 
     assert_equal(
@@ -316,13 +310,13 @@ class ImmigrantTest < ActiveSupport::TestCase
     ]
 
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :articles
         has_one :favorite_book, :class_name => 'Book',
                 :conditions => "most_awesome"
       end
-      class Book < MockModel; end
-      class Article < MockModel; end
+      class Book < ActiveRecord::Base; end
+      class Article < ActiveRecord::Base; end
     CODE
 
     assert_equal([], infer_keys(database_keys))
@@ -331,7 +325,7 @@ class ImmigrantTest < ActiveSupport::TestCase
   if ActiveRecord::VERSION::STRING < '4.'
     test 'finder_sql associations should not generate foreign keys' do
       given <<-CODE
-        class Author < MockModel
+        class Author < ActiveRecord::Base
           has_many :books, :finder_sql => <<-SQL
             SELECT *
             FROM books
@@ -339,7 +333,7 @@ class ImmigrantTest < ActiveSupport::TestCase
             ORDER BY RANDOM() LIMIT 5'
           SQL
         end
-        class Book < MockModel; end
+        class Book < ActiveRecord::Base; end
       CODE
 
       assert_equal([], infer_keys)
@@ -348,13 +342,13 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'polymorphic associations should not generate foreign keys' do
     given <<-CODE
-      class Property < MockModel
+      class Property < ActiveRecord::Base
         belongs_to :owner, :polymorphic => true
       end
-      class Person < MockModel
+      class Person < ActiveRecord::Base
         has_many :properties, :as => :owner
       end
-      class Corporation < MockModel
+      class Corporation < ActiveRecord::Base
         has_many :properties, :as => :owner
       end
     CODE
@@ -364,15 +358,15 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'has_many :through should not generate foreign keys' do
     given <<-CODE
-      class Author < MockModel
+      class Author < ActiveRecord::Base
         has_many :authors_fans
         has_many :fans, :through => :authors_fans
       end
-      class AuthorsFan < MockModel
+      class AuthorsFan < ActiveRecord::Base
         belongs_to :author
         belongs_to :fan
       end
-      class Fan < MockModel
+      class Fan < ActiveRecord::Base
         has_many :authors_fans
         has_many :authors, :through => :authors_fans
       end
@@ -393,8 +387,8 @@ class ImmigrantTest < ActiveSupport::TestCase
 
   test 'broken associations should not cause errors' do
     given <<-CODE
-      class Author < MockModel; end
-      class Book < MockModel
+      class Author < ActiveRecord::Base; end
+      class Book < ActiveRecord::Base
         belongs_to :author
         belongs_to :invalid
       end
