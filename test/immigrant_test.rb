@@ -40,6 +40,15 @@ class ImmigrantTest < ActiveSupport::TestCase
     def tables
       ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base).map(&:table_name)
     end
+    def columns(table_name)
+      AnyColumn.new
+    end
+  end
+
+  class AnyColumn
+    def any?
+      true
+    end
   end
 
   def teardown
@@ -417,5 +426,32 @@ class ImmigrantTest < ActiveSupport::TestCase
     CODE
 
     assert_equal([], infer_keys)
+  end
+
+  test 'missing tables should not generate a foreign key' do
+    given <<-CODE
+      class User < ActiveRecord::Base; end
+      class Widget < ActiveRecord::Base
+        self.table_name = :wiiiidgets
+        belongs_to :user
+      end
+    CODE
+
+    MockConnection.stub_any_instance(:tables, ["users"]) do
+      assert_equal([], infer_keys)
+    end
+  end
+
+  test 'invalid columns should not generate a foreign key' do
+    given <<-CODE
+      class User < ActiveRecord::Base; end
+      class Widget < ActiveRecord::Base
+        belongs_to :user
+      end
+    CODE
+
+    MockConnection.stub_any_instance(:columns, []) do
+      assert_equal([], infer_keys)
+    end
   end
 end

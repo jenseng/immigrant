@@ -4,9 +4,10 @@ gemspec
 
 group :development do
   gem 'appraisal'
-  gem 'debugger'
+  gem 'byebug'
 end
 
 group :test do
   gem 'rake'
+  gem 'minitest-stub_any_instance'
 end

@@ -88,14 +88,14 @@ module Immigrant
         return [] if klass.abstract_class? || !tables.include?(klass.table_name)
         candidate_reflections_for(klass).inject([]) do |result, reflection|
           begin
-            result.concat foreign_key_for(klass, reflection)
+            result.concat foreign_keys_for_reflection(klass, reflection)
           rescue NameError # e.g. belongs_to :oops_this_is_not_a_table
             result
           end
         end
       end
 
-      def foreign_key_for(klass, reflection)
+      def foreign_keys_for_reflection(klass, reflection)
         case reflection.macro
         when :belongs_to
           infer_belongs_to_keys(klass, reflection)
@@ -103,19 +103,25 @@ module Immigrant
           infer_has_n_keys(klass, reflection)
         when :has_and_belongs_to_many
           infer_habtm_keys(klass, reflection)
-        else
-          []
-        end
+        end || []
       end
 
       def infer_belongs_to_keys(klass, reflection)
-        return [] if reflection.name == :left_side # redundant and unusable reflection automagically created by HABTM
+        return if reflection.name == :left_side # redundant and unusable reflection automagically created by HABTM
+
+        from_table = klass.table_name
+        to_table = reflection.klass.table_name
+        column = reflection.send(FOREIGN_KEY).to_s
+        primary_key = (reflection.options[:primary_key] || reflection.klass.primary_key).to_s
+
+        return unless column_exists?(from_table, column)
+
         [
           ForeignKeyDefinition.new(
-            klass.table_name,
-            reflection.klass.table_name,
-            :column => reflection.send(FOREIGN_KEY).to_s,
-            :primary_key => (reflection.options[:primary_key] || reflection.klass.primary_key).to_s,
+            from_table,
+            to_table,
+            :column => column,
+            :primary_key => primary_key
             # although belongs_to can specify :dependent, it doesn't make
             # sense from a foreign key perspective, so no :on_delete
           )
@@ -123,38 +129,69 @@ module Immigrant
       end
 
       def infer_has_n_keys(klass, reflection)
+        from_table = reflection.klass.table_name
+        to_table = klass.table_name
+        column = reflection.send(FOREIGN_KEY).to_s
+        primary_key = (reflection.options[:primary_key] || klass.primary_key).to_s
+
         actions = {}
         if [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass)
           actions = {:on_delete => :cascade, :on_update => :cascade}
         end
+
+        return unless column_exists?(from_table, column)
+
         [
           ForeignKeyDefinition.new(
-            reflection.klass.table_name,
-            klass.table_name,
+            from_table,
+            to_table,
             {
-              :column => reflection.send(FOREIGN_KEY).to_s,
-              :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
+              :column => column,
+              :primary_key => primary_key
             }.merge(actions)
           )
         ]
       end
 
       def infer_habtm_keys(klass, reflection)
+        keys = []
+
         join_table = (reflection.respond_to?(:join_table) ? reflection.join_table : reflection.options[:join_table]).to_s
-        [
-          ForeignKeyDefinition.new(
+
+        left_to_table = klass.table_name
+        left_column = reflection.send(FOREIGN_KEY).to_s
+        left_primary_key = klass.primary_key.to_s
+        if column_exists?(join_table, left_column)
+          keys << ForeignKeyDefinition.new(
             join_table,
-            klass.table_name,
-            :column => reflection.send(FOREIGN_KEY).to_s,
-            :primary_key => klass.primary_key.to_s
-          ),
-          ForeignKeyDefinition.new(
-            join_table,
-            reflection.klass.table_name,
-            :column => reflection.association_foreign_key.to_s,
-            :primary_key => reflection.klass.primary_key.to_s
+            left_to_table,
+            :column => left_column,
+            :primary_key => left_primary_key
           )
-        ]
+        end
+
+        right_to_table = reflection.klass.table_name
+        right_column = reflection.association_foreign_key.to_s
+        right_primary_key = reflection.klass.primary_key.to_s
+        if column_exists?(join_table, left_column)
+          keys << ForeignKeyDefinition.new(
+            join_table,
+            right_to_table,
+            :column => right_column,
+            :primary_key => right_primary_key
+          )
+        end
+
+        keys
+      end
+
+      def column_exists?(table_name, column_name)
+        columns_for(table_name).any? { |column| column.name == column_name }
+      end
+
+      def columns_for(table_name)
+        @columns ||= {}
+        @columns[table_name] ||= ActiveRecord::Base.connection.columns(table_name)
       end
 
       def qualified_reflection?(reflection, klass)

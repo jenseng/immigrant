@@ -3,6 +3,7 @@ require 'bundler/setup'
 Bundler.require(:default)
 
 require 'minitest/autorun'
+require 'minitest/stub_any_instance'
 
 require 'active_record'
 require_relative "compat"
