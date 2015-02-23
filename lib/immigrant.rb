@@ -81,6 +81,7 @@ module Immigrant
       end
 
       def foreign_keys_for(klass)
+        return [] if klass.abstract_class?
         candidate_reflections_for(klass).inject([]) do |result, reflection|
           begin
             result.concat foreign_key_for(klass, reflection)

@@ -402,4 +402,17 @@ class ImmigrantTest < ActiveSupport::TestCase
       infer_keys
     )
   end
+
+  test 'abstract classes should not generate a foreign key' do
+    given <<-CODE
+      class User < ActiveRecord::Base; end
+      class Widget < ActiveRecord::Base
+        self.abstract_class = true
+
+        belongs_to :user
+      end
+    CODE
+
+    assert_equal([], infer_keys)
+  end
 end
