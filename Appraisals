@@ -23,6 +23,10 @@ appraise "activerecord-4.1" do
   gem "foreigner", "~> 1.2"
 end
 
+appraise "activerecord-4.2" do
+  gem "activerecord", "~> 4.2.0"
+end
+
 appraise "activerecord-edge" do
   gem "arel", github: "rails/arel"
   gem "activerecord", github: "rails/rails"
