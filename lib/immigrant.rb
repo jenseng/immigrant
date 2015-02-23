@@ -112,20 +112,24 @@ module Immigrant
             :column => reflection.send(FOREIGN_KEY).to_s,
             :primary_key => (reflection.options[:primary_key] || reflection.klass.primary_key).to_s,
             # although belongs_to can specify :dependent, it doesn't make
-            # sense from a foreign key perspective
-            ON_DELETE => nil
+            # sense from a foreign key perspective, so no :on_delete
           )
         ]
       end
 
       def infer_has_n_keys(klass, reflection)
+        actions = {}
+        if [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass)
+          actions = {:on_delete => :cascade, :on_update => :cascade}
+        end
         [
           ForeignKeyDefinition.new(
             reflection.klass.table_name,
             klass.table_name,
-            :column => reflection.send(FOREIGN_KEY).to_s,
-            :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
-            ON_DELETE => [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass) ? :delete : nil
+            {
+              :column => reflection.send(FOREIGN_KEY).to_s,
+              :primary_key => (reflection.options[:primary_key] || klass.primary_key).to_s,
+            }.merge(actions)
           )
         ]
       end
@@ -137,15 +141,13 @@ module Immigrant
             join_table,
             klass.table_name,
             :column => reflection.send(FOREIGN_KEY).to_s,
-            :primary_key => klass.primary_key.to_s,
-            ON_DELETE => nil
+            :primary_key => klass.primary_key.to_s
           ),
           ForeignKeyDefinition.new(
             join_table,
             reflection.klass.table_name,
             :column => reflection.association_foreign_key.to_s,
-            :primary_key => reflection.klass.primary_key.to_s,
-            ON_DELETE => nil
+            :primary_key => reflection.klass.primary_key.to_s
           )
         ]
       end

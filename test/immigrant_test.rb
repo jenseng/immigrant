@@ -64,7 +64,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     keys = Immigrant.infer_keys(db_keys).first
     # ensure each key generates correctly
     keys.each { |key| key.to_ruby(:add) }
-    keys
+    keys.sort_by { |key| [key.from_table, key.to_table] }
   end
 
   # basic scenarios
@@ -80,7 +80,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -97,13 +97,13 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )
   end
 
-  test 'has_one :dependent => :delete should generate a foreign key with :on_delete => :delete' do
+  test 'has_one :dependent => :delete should generate a foreign key with :on_delete => :cascade' do
     given <<-CODE
       class Author < MockModel
         has_one :book, :order => "id DESC", :dependent => :delete
@@ -114,7 +114,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => :delete
+         :column => 'author_id', :primary_key => 'id', :on_delete => :cascade, :on_update => :cascade
        )],
       infer_keys
     )
@@ -131,13 +131,13 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )
   end
 
-  test 'has_many :dependent => :delete_all should generate a foreign key with :on_delete => :delete' do
+  test 'has_many :dependent => :delete_all should generate a foreign key with :on_delete => :cascade' do
     given <<-CODE
       class Author < MockModel
         has_many :books, :dependent => :delete_all
@@ -148,7 +148,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => :delete
+         :column => 'author_id', :primary_key => 'id', :on_delete => :cascade, :on_update => :cascade
        )],
       infer_keys
     )
@@ -165,11 +165,11 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'authors_fans', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        ),
        foreign_key_definition(
          'authors_fans', 'fans',
-         :column => 'fan_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'fan_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -186,11 +186,11 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'lols_wuts', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        ),
        foreign_key_definition(
          'lols_wuts', 'fans',
-         :column => 'fan_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'fan_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -210,11 +210,11 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'articles', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        ),
        foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -234,7 +234,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
         'emails', 'users',
-        :column => 'to', :primary_key => 'email', Immigrant::ON_DELETE => nil
+        :column => 'to', :primary_key => 'email'
        )],
       infer_keys
     )
@@ -255,7 +255,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'employees', 'companies',
-         :column => 'company_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'company_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -274,7 +274,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -293,7 +293,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -306,12 +306,12 @@ class ImmigrantTest < ActiveSupport::TestCase
     database_keys = [
       foreign_key_definition(
         'articles', 'authors',
-        :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil,
+        :column => 'author_id', :primary_key => 'id',
         :name => "doesn't_matter"
       ),
       foreign_key_definition(
         'books', 'authors', :column => 'author_id', :primary_key => 'id',
-        Immigrant::ON_DELETE => :delete
+        :on_delete => :restrict, :on_update => :nullify
       )
     ]
 
@@ -381,11 +381,11 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'authors_fans', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        ),
        foreign_key_definition(
          'authors_fans', 'fans',
-         :column => 'fan_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'fan_id', :primary_key => 'id'
        )],
       infer_keys
     )
@@ -403,7 +403,7 @@ class ImmigrantTest < ActiveSupport::TestCase
     assert_equal(
       [foreign_key_definition(
          'books', 'authors',
-         :column => 'author_id', :primary_key => 'id', Immigrant::ON_DELETE => nil
+         :column => 'author_id', :primary_key => 'id'
        )],
       infer_keys
     )

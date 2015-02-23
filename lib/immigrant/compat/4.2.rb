@@ -5,7 +5,6 @@ module Immigrant
 
   TEMPLATE = 'immigration.rb.erb'
   FOREIGN_KEY = :foreign_key
-  ON_DELETE = :on_delete
 
   def self.qualified_reflection?(reflection, klass)
     scope = reflection.scope

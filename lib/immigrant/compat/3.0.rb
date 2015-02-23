@@ -3,7 +3,6 @@ module Immigrant
 
   TEMPLATE = 'immigration-pre-3.1.rb.erb'
   FOREIGN_KEY = :primary_key_name
-  ON_DELETE = :dependent
 
   def self.qualified_reflection?(reflection, klass)
     reflection.options[:conditions].present?
