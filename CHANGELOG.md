@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+* Rails 4.2+ `:on_update` / `:on_delete` fixes (fixes #18)
+* Rails 5.0 compatibility fix
+* Better invalid association detection (fixes #2, #16)
+* Ignore view-backed models (fixes #17)
+
 ## 0.2.0
 
 * Rails 4.2 support
