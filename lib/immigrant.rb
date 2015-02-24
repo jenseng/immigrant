@@ -198,10 +198,8 @@ module Immigrant
         scope = reflection.scope
         if scope.nil?
           false
-        elsif scope.respond_to?(:options)
-          scope.options[:where].present?
         else
-          klass.instance_exec(*([nil]*scope.arity), &scope).where_values.present?
+          klass.instance_exec(*([nil]*scope.arity), &scope).where_clause.any?
         end
       rescue
         # if there's an error evaluating the scope block or whatever, just
@@ -212,4 +210,5 @@ module Immigrant
 end
 
 require 'immigrant/loader'
+require 'immigrant/foreign_key_extensions'
 require 'immigrant/railtie' if defined?(Rails)

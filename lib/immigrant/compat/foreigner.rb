@@ -1,4 +1,24 @@
+begin
+  require 'foreigner'
+rescue LoadError
+  $stderr.puts <<-ERR.strip_heredoc
+
+    ERROR: immigrant requires the foreigner gem (unless you are on rails 4.2+)
+
+    To fix this, add the following to your Gemfile:
+
+      gem "foreigner", "~> 1.2"
+
+    Or just upgrade rails ;) ... lol, "just"
+
+  ERR
+  exit 1
+end
+Foreigner.load
+
 module Immigrant
+  ForeignKeyDefinition = ::Foreigner::ConnectionAdapters::ForeignKeyDefinition
+
   module ForeignKeyExtensions
     include Foreigner::SchemaDumper::ClassMethods
 

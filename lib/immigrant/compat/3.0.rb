@@ -1,6 +1,6 @@
-module Immigrant
-  ForeignKeyDefinition = ::Foreigner::ConnectionAdapters::ForeignKeyDefinition
+require_relative 'foreigner'
 
+module Immigrant
   TEMPLATE = 'immigration-pre-3.1.rb.erb'
   FOREIGN_KEY = :primary_key_name
 
