@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+* Fix schema dumping regression in rails <= 4.1 (fixes #20)
+
 ## 0.3.0
 
 * Rails 4.2+ `:on_update` / `:on_delete` fixes (fixes #18)
