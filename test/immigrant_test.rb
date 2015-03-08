@@ -454,4 +454,14 @@ class ImmigrantTest < ActiveSupport::TestCase
       assert_equal([], infer_keys)
     end
   end
+
+  test 'ForeignKeyDefinition#to_ruby should correctly dump the key' do
+    if ActiveRecord::VERSION::STRING < '4.2.'
+      definition = foreign_key_definition('foos', 'bars', dependent: 'delete')
+      assert_equal 'add_foreign_key "foos", "bars", name: "foos__fk", column: nil, primary_key: nil, dependent: "delete"', definition.to_ruby
+    else
+      definition = foreign_key_definition('foos', 'bars', on_delete: 'cascade')
+      assert_equal 'add_foreign_key "foos", "bars", column: nil, primary_key: "id", name: "foos__fk", on_delete: "cascade"', definition.to_ruby
+    end
+  end
 end
