@@ -6,8 +6,13 @@ module Immigrant
         Immigrant.load
       end
     end
+
     generators do
-      require "generators/immigration_generator"
+      require 'generators/immigration_generator'
+    end
+
+    rake_tasks do
+      require 'immigrant/task'
     end
   end
 end
