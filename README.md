@@ -52,4 +52,4 @@ migration.
 
 ## License
 
-Copyright (c) 2012-2014 Jon Jensen, released under the MIT license
+Copyright (c) 2012-2015 Jon Jensen, released under the MIT license
