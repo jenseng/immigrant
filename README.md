@@ -28,6 +28,13 @@ evaluating the associations in your models (e.g. `belongs_to`, `has_many`, etc.)
 Only missing keys will be added; existing ones will never be altered or
 removed.
 
+### Rake Task
+
+To help you remember to add keys in the future, there's a handy rake
+task you can add to your CI setup.  Just run `rake immigrant:check_keys`,
+and if anything is missing it will tell you about it and exit with a
+non-zero status.
+
 ## Considerations
 
 If the data in your tables is bad, then the migration will fail to run
