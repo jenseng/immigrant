@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+* Add rake task that checks for missing keys
+
 ## 0.3.1
 
 * Fix schema dumping regression in rails <= 4.1 (fixes #20)
