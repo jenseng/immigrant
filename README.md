@@ -35,6 +35,22 @@ task you can add to your CI setup.  Just run `rake immigrant:check_keys`,
 and if anything is missing it will tell you about it and exit with a
 non-zero status.
 
+### Skipping associations
+
+`Immigrant.ignore_keys` allows you to specify a list of keys that should
+be ignored (both in the migration generator and the rake task). This is
+useful if you have associations spanning databases.
+
+Just create an config/initializers/immigrant.rb file with something like
+the following:
+
+```ruby
+Immigrant.ignore_keys = [
+  { from_table: "users", column: "account_id" },
+  # etc
+]
+```
+
 ## Considerations
 
 If the data in your tables is bad, then the migration will fail to run
@@ -46,7 +62,7 @@ add foreign keys.
 Immigrant currently only looks for foreign keys in `ActiveRecord::Base`'s
 database. So if a model is using a different database connection and it has
 foreign keys, Immigrant will incorrectly include them again in the generated
-migration.
+migration. `Immigrant.ignore_keys` can be used to work around this.
 
 ## [Changelog](CHANGELOG.md)
 
