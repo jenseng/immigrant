@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3
+
+* Add ability to ignore associations (via `Immigrant.ignore_keys`, #21)
+
 ## 0.3.2
 
 * Add rake task that checks for missing keys
