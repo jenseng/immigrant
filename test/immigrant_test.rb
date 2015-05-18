@@ -41,15 +41,20 @@ class ImmigrantTest < ActiveSupport::TestCase
       ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base).map(&:table_name)
     end
     def columns(table_name)
-      AnyColumn.new
+      AnyCollection.new
+    end
+    def indexes(table_name)
+      AnyCollection.new
     end
   end
 
-  class AnyColumn
+  class AnyCollection
     def any?
       true
     end
   end
+
+  Index = ActiveRecord::ConnectionAdapters::IndexDefinition
 
   def teardown
     subclasses = ActiveSupport::DescendantsTracker.direct_descendants(ActiveRecord::Base)
@@ -451,6 +456,26 @@ class ImmigrantTest < ActiveSupport::TestCase
     CODE
 
     MockConnection.stub_any_instance(:columns, []) do
+      assert_equal([], infer_keys)
+    end
+  end
+
+  test 'insufficiently unique "primary" keys should not generate a foreign key' do
+    given <<-CODE
+      class Setting < ActiveRecord::Base; end
+
+      class SettingValue < ActiveRecord::Base
+        belongs_to :setting,
+                   :conditions => { :deleted_at => nil },
+                   foreign_key: :name, primary_key: :name
+      end
+    CODE
+
+    # emulate `"index_settings_on_name" UNIQUE, btree (name) WHERE deleted_at IS NULL`
+    # it's unique, but not enough for a foreign key just on name
+    indexes = [Index.new("settings", ["name"], true, "deleted_at IS NULL")]
+
+    MockConnection.stub_any_instance(:indexes, indexes) do
       assert_equal([], infer_keys)
     end
   end
