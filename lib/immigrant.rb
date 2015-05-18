@@ -33,14 +33,22 @@ module Immigrant
           if current_key.to_table != foreign_key.to_table || current_key.options[:primary_key] != foreign_key.options[:primary_key]
             warnings[hash_key] = "Skipping #{foreign_key.from_table}.#{foreign_key.options[:column]}: its association references a different key/table than its current foreign key"
           end
-        elsif !ignore_keys[hash_key]
-          new_keys << foreign_key
+          next
         end
+
+        next if ignore_keys[hash_key]
+        next unless key_validator.valid?(foreign_key)
+
+        new_keys << foreign_key
       end
       [new_keys.sort_by{ |key| key.options[:name] }, warnings]
     end
 
     private
+
+      def key_validator
+        @key_validator ||= KeyValidator.new
+      end
 
       def tables
         @tables ||= ActiveRecord::Base.connection.tables
@@ -129,8 +137,6 @@ module Immigrant
         column = reflection.send(FOREIGN_KEY).to_s
         primary_key = (reflection.options[:primary_key] || reflection.klass.primary_key).to_s
 
-        return unless column_exists?(from_table, column)
-
         [
           ForeignKeyDefinition.new(
             from_table,
@@ -154,8 +160,6 @@ module Immigrant
           actions = {:on_delete => :cascade, :on_update => :cascade}
         end
 
-        return unless column_exists?(from_table, column)
-
         [
           ForeignKeyDefinition.new(
             from_table,
@@ -169,45 +173,32 @@ module Immigrant
       end
 
       def infer_habtm_keys(klass, reflection)
-        keys = []
-
         join_table = (reflection.respond_to?(:join_table) ? reflection.join_table : reflection.options[:join_table]).to_s
 
         left_to_table = klass.table_name
         left_column = reflection.send(FOREIGN_KEY).to_s
         left_primary_key = klass.primary_key.to_s
-        if column_exists?(join_table, left_column)
-          keys << ForeignKeyDefinition.new(
-            join_table,
-            left_to_table,
-            :column => left_column,
-            :primary_key => left_primary_key
-          )
-        end
 
         right_to_table = reflection.klass.table_name
         right_column = reflection.association_foreign_key.to_s
         right_primary_key = reflection.klass.primary_key.to_s
-        if column_exists?(join_table, left_column)
-          keys << ForeignKeyDefinition.new(
+
+        [
+          ForeignKeyDefinition.new(
+            join_table,
+            left_to_table,
+            :column => left_column,
+            :primary_key => left_primary_key
+          ),
+          ForeignKeyDefinition.new(
             join_table,
             right_to_table,
             :column => right_column,
             :primary_key => right_primary_key
           )
-        end
-
-        keys
+        ]
       end
 
-      def column_exists?(table_name, column_name)
-        columns_for(table_name).any? { |column| column.name == column_name }
-      end
-
-      def columns_for(table_name)
-        @columns ||= {}
-        @columns[table_name] ||= ActiveRecord::Base.connection.columns(table_name)
-      end
 
       def qualified_reflection?(reflection, klass)
         scope = reflection.scope
@@ -225,5 +216,6 @@ module Immigrant
 end
 
 require 'immigrant/loader'
+require 'immigrant/key_validator'
 require 'immigrant/foreign_key_extensions'
 require 'immigrant/railtie' if defined?(Rails)
