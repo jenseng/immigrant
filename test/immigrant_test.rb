@@ -455,6 +455,30 @@ class ImmigrantTest < ActiveSupport::TestCase
     end
   end
 
+  test 'ignore_keys should be respected' do
+    given <<-CODE
+      class User <  ActiveRecord::Base; end
+      class Category < ActiveRecord::Base; end
+      class Widget < ActiveRecord::Base
+        belongs_to :user
+        belongs_to :category
+      end
+    CODE
+
+    Immigrant.ignore_keys = [{:from_table => "widgets", :column => "category_id"}]
+    begin
+      assert_equal(
+        [foreign_key_definition(
+           'widgets', 'users',
+           :column => 'user_id', :primary_key => 'id'
+         )],
+        infer_keys
+      )
+    ensure
+      Immigrant.ignore_keys = []
+    end
+  end
+
   test 'ForeignKeyDefinition#to_ruby should correctly dump the key' do
     if ActiveRecord::VERSION::STRING < '4.2.'
       definition = foreign_key_definition('foos', 'bars', dependent: 'delete')

@@ -1,13 +1,28 @@
 require 'active_support/all'
 
 module Immigrant
+  class << self
+    # expected format:
+    # [{from_table: "the_table", column: "the_column"}, ...]"
+    attr_writer :ignore_keys
+
+    def ignore_keys
+      @ignore_keys ||= []
+    end
+  end
+
   class KeyFinder
     def infer_keys(db_keys = current_foreign_keys, classes = model_classes)
-      database_keys = db_keys.inject({}) { |hash, foreign_key|
-        hash[foreign_key.hash_key] = foreign_key
-        hash
-      }
+      database_keys = Hash[db_keys.map { |foreign_key|
+        [foreign_key.hash_key, foreign_key]
+      }]
+
+      ignore_keys = Hash[Immigrant.ignore_keys.map { |key|
+        [[key[:from_table], key[:column]], true]
+      }]
+
       model_keys, warnings = model_keys(classes)
+
       new_keys = []
       model_keys.keys.each do |hash_key|
         foreign_key = model_keys[hash_key]
@@ -18,7 +33,7 @@ module Immigrant
           if current_key.to_table != foreign_key.to_table || current_key.options[:primary_key] != foreign_key.options[:primary_key]
             warnings[hash_key] = "Skipping #{foreign_key.from_table}.#{foreign_key.options[:column]}: its association references a different key/table than its current foreign key"
           end
-        else
+        elsif !ignore_keys[hash_key]
           new_keys << foreign_key
         end
       end
