@@ -28,6 +28,18 @@ class ImmigrantTest < ActiveSupport::TestCase
         end
       })
     end
+    if ActiveRecord::VERSION::STRING < '4.1'
+      # make sure habtms create a model class so that MockConnection.tables works
+      extend(Module.new{
+        define_method :has_and_belongs_to_many do |assoc, options = {}|
+          join_table = options[:join_table] || [table_name, assoc.to_s].sort.join("_")
+          Class.new(ActiveRecord::Base) do
+            self.table_name = join_table
+          end
+          super assoc, options
+        end
+      })
+    end
   end
 
   class MockConnection
