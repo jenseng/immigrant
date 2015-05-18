@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'immigrant'
-  s.version = '0.3.3'
+  s.version = '0.3.4'
   s.summary = 'Foreign key migration generator for Rails'
   s.description = 'Adds a generator for creating a foreign key migration based on your current model associations'
 

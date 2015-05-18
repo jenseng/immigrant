@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.4
+
+* Better detection of impossible foreign keys (fixes #19)
+
 ## 0.3.3
 
 * Add ability to ignore associations (via `Immigrant.ignore_keys`, #21)
