@@ -143,6 +143,23 @@ class ImmigrantTest < ActiveSupport::TestCase
     )
   end
 
+  test 'has_one :dependent => :nullify should generate a foreign key with :on_delete => :nullify' do
+    given <<-CODE
+      class Author < ActiveRecord::Base
+        has_one :book, :order => "id DESC", :dependent => :nullify
+      end
+      class Book < ActiveRecord::Base; end
+    CODE
+
+    assert_equal(
+      [foreign_key_definition(
+         'books', 'authors',
+         :column => 'author_id', :primary_key => 'id', :on_delete => :nullify, :on_update => :nullify
+       )],
+      infer_keys
+    )
+  end
+
   test 'has_many should generate a foreign key' do
     given <<-CODE
       class Author < ActiveRecord::Base
@@ -172,6 +189,23 @@ class ImmigrantTest < ActiveSupport::TestCase
       [foreign_key_definition(
          'books', 'authors',
          :column => 'author_id', :primary_key => 'id', :on_delete => :cascade, :on_update => :cascade
+       )],
+      infer_keys
+    )
+  end
+
+  test 'has_many :dependent => :nullify should generate a foreign key with :on_delete => :nullify' do
+    given <<-CODE
+      class Author < ActiveRecord::Base
+        has_many :books, :dependent => :nullify
+      end
+      class Book < ActiveRecord::Base; end
+    CODE
+
+    assert_equal(
+      [foreign_key_definition(
+         'books', 'authors',
+         :column => 'author_id', :primary_key => 'id', :on_delete => :nullify, :on_update => :nullify
        )],
       infer_keys
     )

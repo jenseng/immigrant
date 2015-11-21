@@ -75,7 +75,7 @@ module Immigrant
           #    Foo.has_many :bars
           #    Foo.has_many :bazzes, :class_name => Bar
           # we need to make sure everything is legit and see if any of them
-          # specify :dependent => :delete
+          # specify :dependent => :delete|:delete_all|:nullify
           if current_key = foreign_keys[foreign_key.hash_key]
             if current_key.to_table != foreign_key.to_table || current_key.options[:primary_key] != foreign_key.options[:primary_key]
               warnings[foreign_key.hash_key] ||= "Skipping #{foreign_key.from_table}.#{foreign_key.options[:column]}: it has multiple associations referencing different keys/tables."
@@ -149,6 +149,12 @@ module Immigrant
         ]
       end
 
+      DEPENDENT_MAP = {
+        :delete => :cascade,
+        :delete_all => :cascade,
+        :nullify => :nullify
+      }
+
       def infer_has_n_keys(klass, reflection)
         from_table = reflection.klass.table_name
         to_table = klass.table_name
@@ -156,8 +162,9 @@ module Immigrant
         primary_key = (reflection.options[:primary_key] || klass.primary_key).to_s
 
         actions = {}
-        if [:delete, :delete_all].include?(reflection.options[:dependent]) && !qualified_reflection?(reflection, klass)
-          actions = {:on_delete => :cascade, :on_update => :cascade}
+        dependent_action = DEPENDENT_MAP[reflection.options[:dependent]]
+        if dependent_action && !qualified_reflection?(reflection, klass)
+          actions = {:on_delete => dependent_action, :on_update => dependent_action}
         end
 
         [
