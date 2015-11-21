@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.5
+
+* Bring along dependent: :nullify (fixes #24)
+
 ## 0.3.4
 
 * Better detection of impossible foreign keys (fixes #19)
