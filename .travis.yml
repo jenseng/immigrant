@@ -15,13 +15,19 @@ gemfile:
 matrix:
   exclude:
     - rvm: 2.3.1
-      gemfile: gemfiles/activerecord_3.0.gemfile
+      gemfile:
+        - gemfiles/activerecord_3.0.gemfile
+        - gemfiles/activerecord_3.1.gemfile
+        - gemfiles/activerecord_3.2.gemfile
     - rvm: 2.1.5
-      gemfile: gemfiles/activerecord_3.0.gemfile
+      gemfile:
+        - gemfiles/activerecord_3.0.gemfile
+        - gemfiles/activerecord_5.0.gemfile
+        - gemfiles/activerecord_edge.gemfile
     - rvm: 1.9.3
       gemfile:
-        - gemfiles/activerecord_edge.gemfile
         - gemfiles/activerecord_5.0.gemfile
+        - gemfiles/activerecord_edge.gemfile
   allow_failures:
     - gemfile: gemfiles/activerecord_edge.gemfile
 bundler_args: --without development
