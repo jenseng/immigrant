@@ -19,3 +19,5 @@ matrix:
   allow_failures:
     - gemfile: gemfiles/activerecord_edge.gemfile
 bundler_args: --without development
+before_install:
+  - gem install bundler
