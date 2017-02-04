@@ -17,4 +17,14 @@ class ImmigrationGenerator < ActiveRecord::Generators::Base
   end
 
   source_root File.expand_path(File.join(File.dirname(__FILE__), 'templates'))
+
+  def migration_version
+    if rails5?
+      "[#{Rails::VERSION::MAJOR}.#{Rails::VERSION::MINOR}]"
+    end
+  end
+
+  def rails5?
+    Rails.version.start_with? '5'
+  end
 end
