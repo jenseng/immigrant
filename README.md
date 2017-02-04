@@ -1,5 +1,5 @@
 # Immigrant
-[<img src="https://secure.travis-ci.org/jenseng/immigrant.png?rvm=1.9.3" />](http://travis-ci.org/jenseng/immigrant)
+[<img src="https://secure.travis-ci.org/jenseng/immigrant.svg?rvm=1.9.3" />](http://travis-ci.org/jenseng/immigrant)
 
 Immigrant gives Rails a foreign key migration generator so you can
 effortlessly find and add missing keys. This is particularly helpful
