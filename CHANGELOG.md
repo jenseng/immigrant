@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.6
+
+* Include the rails version in the migration, if supported (#27)
+
 ## 0.3.5
 
 * Bring along dependent: :nullify (fixes #24)
