@@ -15,4 +15,4 @@ group :test do
   gem "minitest-stub_any_instance"
 end
 
-gemspec :path => "../"
+gemspec path: "../"

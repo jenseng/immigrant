@@ -2,8 +2,8 @@
 
 source "http://rubygems.org"
 
-gem "arel", :github => "rails/arel"
-gem "activerecord", :github => "rails/rails"
+gem "arel", github: "rails/arel"
+gem "activerecord", github: "rails/rails"
 
 group :development do
   gem "appraisal"
@@ -15,4 +15,4 @@ group :test do
   gem "minitest-stub_any_instance"
 end
 
-gemspec :path => "../"
+gemspec path: "../"
