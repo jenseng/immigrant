@@ -4,10 +4,11 @@ namespace :immigrant do
     Rails.application.eager_load!
 
     keys, warnings = Immigrant::KeyFinder.new.infer_keys
+
+    puts if warnings.values.any?
     warnings.values.each { |warning| $stderr.puts "WARNING: #{warning}" }
 
     puts if keys.any?
-
     keys.each do |key|
       column = key.options[:column]
       pk = key.options[:primary_key]
