@@ -5,10 +5,10 @@ namespace :immigrant do
 
     keys, warnings = Immigrant::KeyFinder.new.infer_keys
 
-    puts if warnings.values.any?
+    $stderr.puts if warnings.values.any?
     warnings.values.each { |warning| $stderr.puts "WARNING: #{warning}" }
 
-    puts if keys.any?
+    $stderr.puts if keys.any?
     keys.each do |key|
       column = key.options[:column]
       pk = key.options[:primary_key]
@@ -16,8 +16,8 @@ namespace :immigrant do
     end
 
     if keys.any?
-      puts
-      puts 'Found missing foreign keys, run `rails generate immigration MigrationName` to create a migration to add them.'
+      $stderr.puts
+      $stderr.puts 'Found missing foreign keys, run `rails generate immigration MigrationName` to create a migration to add them.'
       exit keys.count
     end
   end
